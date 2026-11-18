@@ -9,16 +9,17 @@ TODO: fields (text, attributes such as theme, motif, emotion, author reference).
 ### Author
 TODO: fields.
 
+### Work
+TODO: fields. Work is an entity in the MVP (see D-004 in decisions.md).
+
 ### Connections
-TODO: how passages relate to each other and to attributes (theme, motif, emotion).
+Connections between passages are derived from shared attributes (theme, motif, emotion).
+They are not stored as hand-curated, typed links.
+TODO: how the derivation is computed and whether it is stored.
 
 ## Relationships
-TODO: Passage ↔ Author, Passage ↔ Passage, Passage ↔ attributes.
-
-## Deliberately left out
-- **Work**: not an entity in the MVP, because the model should not centre on the whole work.
-  Revisit only if a concrete need appears. Note it in decisions.md if so.
+TODO: Passage ↔ Author, Passage ↔ Work, Work ↔ Author, Passage ↔ attributes.
+Passage ↔ Passage is derived through shared attributes.
 
 ## Open questions
-- Is a connection typed (similar theme, same motif, contrast) or a plain link?
 - Are themes, motifs and emotions separate tables or one tag table with a kind?

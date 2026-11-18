@@ -18,17 +18,20 @@ than through complete works.
 - Explore passages by theme, motif or emotion (attributes of a passage)
 - Move from one passage to related passages through connections
 - Authors and Works attached to passages
+- Connections between passages are derived from shared attributes (theme, motif, emotion)
+- The MVP ships the backend and one native client first. The second client follows after validation.
 
 TODO: confirm and trim this list.
 
 ## Left out of the MVP
-- Work as a stored entity (deliberate, see decisions.md)
+- Customisable view. The MVP has one fixed design.
+- Hand-curated passage-to-passage links.
 
-TODO: accounts, favourites, search, offline, social features. Decide in or out.
+TODO: accounts, favourites, search, offline, social features, per-user personalisation. Decide in or out.
 
 ## Screens
 TODO. Detail goes in `06-design-notes.md`.
 
 ## Open questions
 - Who is the first reader, and what do they open the app for?
-- What counts as a "connection" between two passages?
+- Which native client ships first, Android or iOS?

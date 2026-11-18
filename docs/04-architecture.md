@@ -10,6 +10,7 @@
 
 ## How they fit together
 Both apps talk to the one backend through the contract in `03-api-contract.md`.
+The MVP ships the backend and one client first. The second client follows after validation.
 The backend owns all data. The apps hold no business rules the other app
 would need to duplicate.
 
