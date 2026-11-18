@@ -1,10 +1,9 @@
 # 02 Data model
 
-Status: v1.0 schema and MVP schema defined. Relational database, designed schema-first.
-This document is the source of truth for database design (see D-012 in `decisions.md`).
+Status: v1.0 schema and MVP schema defined. PostgreSQL database accessed through EF Core, designed schema-first (D-007).
+This document is the source of truth for database design (see D-018 in `decisions.md`).
 
-The database engine is not chosen yet. The constraints only use portable features: CHECK constraints,
-foreign key actions and filtered unique indexes. Both PostgreSQL and SQL Server support all of them.
+The constraints use CHECK constraints, foreign key actions and partial unique indexes, all supported by PostgreSQL.
 
 ## Conventions
 - Every entity has a surrogate primary key `ID`. The one exception is PassageTag, which uses the composite key `(PassageID, TagID)`.
@@ -95,7 +94,7 @@ An excerpt from a Work. A Passage is the unit the reader sees.
 |---|---|---|
 | ID | no | PK |
 | WorkID | no | FK → Work.ID, ON DELETE RESTRICT. Indexed. |
-| Form | no | CHECK IN a fixed list. Starting set: `verse`, `prose`, `drama`. The final list is open (D-011). |
+| Form | no | CHECK IN a fixed list. Starting set: `verse`, `prose`, `drama`. The final list is open (D-017). |
 | Context | yes | NULL when not applicable, for example when the passage stands on its own. |
 
 ### Text
@@ -110,7 +109,7 @@ The wording of a Passage in one language: either the original or a translation.
 | Language | no | ISO 639 code. CHECK on the format. `und` = undetermined. |
 
 Table rules:
-- Filtered UNIQUE (PassageID) WHERE Translator IS NULL. A Passage has at most one original.
+- Partial UNIQUE (PassageID) WHERE Translator IS NULL. A Passage has at most one original.
 - UNIQUE (PassageID, Language, Translator).
 
 ### Tag
@@ -144,7 +143,7 @@ Every relationship rule above is enforced with keys and CHECK constraints. No ru
 ## Connections
 Connections between passages are a **planned system**. They are not part of the MVP or v1.0 schema, and neither schema has a table for them.
 In the MVP, readers find related passages with a tag browser instead: they pick a Tag and see its Passages through PassageTag.
-How connections will work is an open question (D-010).
+How connections will work is an open question (D-016).
 
 ## MVP schema
 The MVP has the same six tables and constraints as v1.0, with one difference. **Work is thin**: it has only `ID`, `Name` and `AuthorID`.
@@ -163,8 +162,8 @@ The MVP is a strict subset of v1.0. Upgrading is purely additive: add the two nu
 ## Deliberately left out
 - **Passage connections**: planned, not in the MVP or v1.0 (see Connections).
 - **Work creation years**: left out of the MVP, added in v1.0.
-- **Work original language**: removed (D-007).
+- **Work original language**: removed (D-013).
 
 ## Open questions
-- How do connections between passages work? Are they typed (similar theme, same motif, contrast) or plain links? Are they derived from shared tags or stored? (D-010)
-- What is the final list of `Passage.Form` values? (D-011)
+- How do connections between passages work? Are they typed (similar theme, same motif, contrast) or plain links? Are they derived from shared tags or stored? (D-016)
+- What is the final list of `Passage.Form` values? (D-017)

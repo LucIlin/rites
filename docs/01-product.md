@@ -16,20 +16,22 @@ than through complete works.
 ## MVP scope
 - Browse and read passages
 - Explore passages by theme, motif or emotion (attributes of a passage)
-- Browse passages by tag
+- Browse passages by tag (the MVP's replacement for connections, see D-015)
 - Authors and Works attached to passages
+- The MVP ships the backend and the Android client first. The iOS client follows after validation and is based on the Android version.
 
 TODO: confirm and trim this list.
 
 ## Left out of the MVP
-- Work creation years (the MVP has a thin Work with only name and author, see D-002)
-- Connections between passages (a planned system, see D-009 and D-010)
+- Customisable view. The MVP has one fixed design.
+- Connections between passages. They are a planned system (D-015, D-016).
+- Work creation years. The MVP has a thin Work with only name and author (D-008).
 
-TODO: accounts, favourites, search, offline, social features. Decide in or out.
+TODO: accounts, favourites, search, offline, social features, per-user personalisation. Decide in or out.
 
 ## Screens
 TODO. Detail goes in `06-design-notes.md`.
 
 ## Open questions
 - Who is the first reader, and what do they open the app for?
-- What counts as a "connection" between two passages?
+- What counts as a "connection" between two passages? (D-016)
