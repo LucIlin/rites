@@ -16,13 +16,14 @@ than through complete works.
 ## MVP scope
 - Browse and read passages
 - Explore passages by theme, motif or emotion (attributes of a passage)
-- Move from one passage to related passages through connections
+- Browse passages by tag
 - Authors and Works attached to passages
 
 TODO: confirm and trim this list.
 
 ## Left out of the MVP
-- Work as a stored entity (deliberate, see decisions.md)
+- Work creation years (the MVP has a thin Work with only name and author, see D-002)
+- Connections between passages (a planned system, see D-009 and D-010)
 
 TODO: accounts, favourites, search, offline, social features. Decide in or out.
 
