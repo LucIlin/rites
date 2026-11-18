@@ -1,6 +1,6 @@
 # 03 API contract
 
-Backend: .NET / C#. Consumed by the Android (Kotlin) and iOS (Swift) apps.
+Backend: .NET Core API in C#, with EF Core and PostgreSQL. Consumed by the Android (Kotlin) and iOS (Swift) apps.
 Derived from `02-data-model.md`. Nothing is defined yet.
 
 ## Conventions

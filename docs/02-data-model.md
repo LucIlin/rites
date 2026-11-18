@@ -1,6 +1,6 @@
 # 02 Data model
 
-Status: MVP in progress. Relational database, designed schema-first.
+Status: MVP in progress. PostgreSQL database accessed through EF Core, designed schema-first.
 
 ## Entities (MVP)
 ### Passage
@@ -15,6 +15,7 @@ TODO: fields. Work is an entity in the MVP (see D-004 in decisions.md).
 ### Connections
 Connections between passages are derived from shared attributes (theme, motif, emotion).
 They are not stored as hand-curated, typed links.
+In the MVP, connections are rudimentary. A measure of overlap between passages is planned and will be implemented later.
 TODO: how the derivation is computed and whether it is stored.
 
 ## Relationships
