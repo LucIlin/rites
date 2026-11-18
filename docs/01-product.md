@@ -1,22 +1,23 @@
 # 01 Product spec
 
 ## What it is
-Rites is a mobile app for consuming poetry and literature through smaller
-snippets related to themes, motifs or emotions. The experience is made of
-small pieces with specific attributes that the reader wants to explore.
+Rites is a mobile app where the user will be shown passages 
+by an algorithm in a view that is customizable to the users preference or the preference of the shown 
+passage.
 
 ## Core idea
-Decenter the work. Users move through connections between passages rather
-than through whole works.
+Decenter the work. Users move through connections made from links in theme, emotions or ambiance between passages rather
+than through complete works.
 
 ## Who it's for
-TODO
+- People looking to discover new literature by sampling before commiting to a whole work.
+- People that want to experience poetry and literature with specific themes, emotions or ambiances.
 
 ## MVP scope
 - Browse and read passages
 - Explore passages by theme, motif or emotion (attributes of a passage)
 - Move from one passage to related passages through connections
-- Authors attached to passages
+- Authors and Works attached to passages
 
 TODO: confirm and trim this list.
 
