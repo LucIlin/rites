@@ -25,7 +25,6 @@ TODO: confirm and trim this list.
 ## Left out of the MVP
 - Customisable view. The MVP has one fixed design.
 - Connections between passages. They are a planned system (D-015, D-016).
-- Work creation years. The MVP has a thin Work with only name and author (D-008).
 
 TODO: accounts, favourites, search, offline, social features, per-user personalisation. Decide in or out.
 

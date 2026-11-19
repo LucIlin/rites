@@ -60,7 +60,7 @@
 
 ## D-008: Thin Work in the MVP
 - **Date:** 2026-11-18
-- **Status:** DECIDED
+- **Status:** SUPERSEDED by D-026
 - **Decision:** The MVP's Work has only ID, Name and AuthorID. The creation-year columns are added in v1.0. This refines D-004.
 - **Why:** none stated
 - **Rejected options:** Full Work in the MVP – none stated
@@ -68,7 +68,7 @@
 
 ## D-009: Text.Translator NULL means the original
 - **Date:** 2026-11-18
-- **Status:** DECIDED
+- **Status:** SUPERSEDED by D-019
 - **Decision:** A Text with Translator NULL is the original. A translation by an unknown translator stores `Unknown`. A Passage has at most one original.
 - **Why:** none stated
 - **Rejected options:** Original identified by language – none stated; IsOriginal flag column – none stated
@@ -76,7 +76,7 @@
 
 ## D-010: Anonymous works use an `Anonymous` Author
 - **Date:** 2026-11-18
-- **Status:** DECIDED
+- **Status:** SUPERSEDED by D-027
 - **Decision:** Work.AuthorID stays NOT NULL. Anonymous works point to a seeded Author row named `Anonymous`.
 - **Why:** none stated
 - **Rejected options:** Nullable Work.AuthorID – none stated
@@ -84,7 +84,7 @@
 
 ## D-011: PassageTag.Strength is a decimal from 0 to 1
 - **Date:** 2026-11-18
-- **Status:** DECIDED
+- **Status:** SUPERSEDED by D-020
 - **Decision:** Strength is DECIMAL(3,2), with 0 < Strength <= 1.
 - **Why:** none stated
 - **Rejected options:** Integer 1–5 – none stated; integer 1–10 – none stated
@@ -108,7 +108,7 @@
 
 ## D-014: Passage to Text is zero-or-many
 - **Date:** 2026-11-18
-- **Status:** DECIDED
+- **Status:** SUPERSEDED by D-019
 - **Decision:** A Passage has zero or many Texts.
 - **Why:** none stated
 - **Rejected options:** One-or-many – none stated
@@ -145,3 +145,99 @@
 - **Why:** none stated
 - **Rejected options:** none stated
 - **Updated:** `docs/02-data-model.md` (rewritten in full)
+
+## D-019: Schema revision 2 adopted
+- **Date:** 2026-11-19
+- **Status:** DECIDED
+- **Decision:** The schema follows revision 2 of the ER diagram. Person replaces Author. PassageText (PassageID, WorkID, Content) replaces Text. Translations are stored as Works, with Language, TranslationOf and TranslatorID on Work.
+- **Why:** none stated
+- **Rejected options:** Revision 1 (Text with Translator and Language) – none stated
+- **Updated:** `docs/02-data-model.md` (rewritten in full), `docs/05-build-plan.md` (Step 1)
+
+## D-020: PassageTag.Strength dropped
+- **Date:** 2026-11-19
+- **Status:** DECIDED
+- **Decision:** PassageTag is a plain link table with only PassageID and TagID.
+- **Why:** none stated
+- **Rejected options:** Decimal Strength in (0, 1] (D-011) – none stated
+- **Updated:** `docs/02-data-model.md` (PassageTag)
+
+## D-021: Person.Nationality removed
+- **Date:** 2026-11-19
+- **Status:** DECIDED
+- **Decision:** Person has only PersonID, Name and Biography.
+- **Why:** none stated
+- **Rejected options:** none stated
+- **Updated:** `docs/02-data-model.md` (Person)
+
+## D-022: Creation years are required
+- **Date:** 2026-11-19
+- **Status:** DECIDED
+- **Decision:** CreationYearStart and CreationYearEnd are NOT NULL. A Work with an unknown date stores an estimated range.
+- **Why:** none stated
+- **Rejected options:** Nullable years meaning unknown – none stated
+- **Updated:** `docs/02-data-model.md` (Conventions, Work)
+
+## D-023: Relay translations allowed
+- **Date:** 2026-11-19
+- **Status:** DECIDED
+- **Decision:** Work.TranslationOf may point to another translation, not only to an original.
+- **Why:** none stated
+- **Rejected options:** Translations of originals only – none stated
+- **Updated:** `docs/02-data-model.md` (Work)
+
+## D-024: Work.Language is the Work's own language
+- **Date:** 2026-11-19
+- **Status:** DECIDED
+- **Decision:** Every Work, original or translation, stores its own language as an ISO 639 code. This is not the original-language column removed in D-013.
+- **Why:** none stated
+- **Rejected options:** none stated
+- **Updated:** `docs/02-data-model.md` (Work)
+
+## D-025: Enumerations stored as PostgreSQL enums
+- **Date:** 2026-11-19
+- **Status:** DECIDED
+- **Decision:** Passage.Form and Tag.Type are PostgreSQL enum types.
+- **Why:** none stated
+- **Rejected options:** CHECK IN lists – none stated
+- **Updated:** `docs/02-data-model.md` (Conventions, Passage, Tag)
+
+## D-026: MVP schema to be derived from revision 2
+- **Date:** 2026-11-19
+- **Status:** OPEN
+- **Decision:** The old MVP schema (thin Work, D-008) is removed. A new MVP schema will be derived from revision 2.
+- **Why:** none stated
+- **Rejected options:** none stated
+- **Updated:** `docs/02-data-model.md` (MVP schema), `docs/01-product.md` (Left out of the MVP)
+
+## D-027: `unknown` Person for unknown authors and translators
+- **Date:** 2026-11-19
+- **Status:** DECIDED
+- **Decision:** A sentinel Person row named `unknown` stands for an unknown author or translator. A translation always has a TranslatorID, and an original never has one.
+- **Why:** none stated
+- **Rejected options:** Seeded `Anonymous` author (D-010) – none stated; NULL TranslatorID for unknown translators – none stated
+- **Updated:** `docs/02-data-model.md` (Person, Work)
+
+## D-028: Passage.OriginalWorkID added
+- **Date:** 2026-11-19
+- **Status:** DECIDED
+- **Decision:** Passage has a required OriginalWorkID that points to the original Work the passage comes from.
+- **Why:** A cheaper way to check PassageTexts, and an easier starting point for querying Passages.
+- **Rejected options:** Checking PassageTexts only through the TranslationOf chain – more expensive
+- **Updated:** `docs/02-data-model.md` (Passage, Backend rules)
+
+## D-029: Creation years of a translation
+- **Date:** 2026-11-19
+- **Status:** DECIDED
+- **Decision:** A translation's CreationYearStart and CreationYearEnd are the years the translation was made.
+- **Why:** none stated
+- **Rejected options:** none stated
+- **Updated:** `docs/02-data-model.md` (Work)
+
+## D-030: Passages without text allowed
+- **Date:** 2026-11-19
+- **Status:** DECIDED
+- **Decision:** A Passage may have zero PassageText rows.
+- **Why:** Cheap, and a passage without text fails the mandatory checks anyway.
+- **Rejected options:** none stated
+- **Updated:** `docs/02-data-model.md` (Passage, Relationships)

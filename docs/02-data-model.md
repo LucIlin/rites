@@ -1,169 +1,167 @@
 # 02 Data model
 
-Status: v1.0 schema and MVP schema defined. PostgreSQL database accessed through EF Core, designed schema-first (D-007).
-This document is the source of truth for database design (see D-018 in `decisions.md`).
-
-The constraints use CHECK constraints, foreign key actions and partial unique indexes, all supported by PostgreSQL.
+Status: v1.0 schema, revision 2 (D-019). PostgreSQL database accessed through EF Core, designed schema-first (D-007).
+This document is the source of truth for database design (D-018).
 
 ## Conventions
-- Every entity has a surrogate primary key `ID`. The one exception is PassageTag, which uses the composite key `(PassageID, TagID)`.
-- Columns are NOT NULL by default. A column is nullable only when "unknown" or "not applicable" is a valid value.
-- A text column that is NOT NULL must also be non-blank (it cannot be only whitespace).
+- Each entity has a surrogate primary key named `<Entity>ID`, generated as an identity column.
+  The link tables PassageText and PassageTag use composite keys.
+- Every column is required (NOT NULL) unless it is marked nullable.
+- A required text column must also be non-blank (not only whitespace).
+- Years are integers. Negative years are BCE and positive years are CE. There is no year 0.
+- A Work with a known year of creation has the same value in CreationYearStart and CreationYearEnd.
+  If the year is unknown, an estimated range is stored (D-022).
 - Language codes follow ISO 639. `und` (undetermined) is used when the language is unknown.
-- Years are integers. Negative years are BCE. There is no year 0, so 1 BCE is directly followed by 1 CE.
+- Enumerations (`Passage.Form`, `Tag.Type`) are PostgreSQL enum types (D-025).
+- Unknown authors and translators point to the sentinel Person row `unknown` (D-027).
 
-## Entities (v1.0)
+## Entities
 
 ```mermaid
 erDiagram
-    Author ||--o{ Work : writes
-    Work ||--o{ Passage : contains
-    Passage ||--o{ Text : "rendered as"
+    Person ||--o{ Work : "authors"
+    Person |o--o{ Work : "translates"
+    Work |o--o{ Work : "translated as"
+    Work ||--o{ Passage : "original of"
+    Work ||--o{ PassageText : "holds"
+    Passage ||--o{ PassageText : "worded as"
     Passage ||--o{ PassageTag : has
     Tag ||--o{ PassageTag : labels
 
-    Author {
-        int ID PK
+    Person {
+        int PersonID PK
         string Name
-        string Nationality "nullable"
-        string Bio "nullable"
+        string Biography "nullable"
     }
     Work {
-        int ID PK
+        int WorkID PK
         string Name
         int AuthorID FK
-        int CreationYearStart "nullable"
-        int CreationYearEnd "nullable"
+        int CreationYearStart
+        int CreationYearEnd
+        string Language
+        int TranslationOf FK "nullable"
+        int TranslatorID FK "nullable"
     }
     Passage {
-        int ID PK
-        int WorkID FK
-        string Form
+        int PassageID PK
+        int OriginalWorkID FK
+        passage_form Form
         string Context "nullable"
     }
-    Text {
-        int ID PK
-        int PassageID FK
+    PassageText {
+        int PassageID PK, FK
+        int WorkID PK, FK
         string Content
-        string Translator "nullable, NULL = original"
-        string Language
     }
     Tag {
-        int ID PK
+        int TagID PK
         string Name
-        string Type
+        tag_type Type
     }
     PassageTag {
         int PassageID PK, FK
         int TagID PK, FK
-        decimal Strength
     }
 ```
 
-### Author
-A person credited with one or more Works.
+### Person
+A person credited as the author or the translator of a Work.
 
 | Column | Null | Constraints |
 |---|---|---|
-| ID | no | PK |
-| Name | no | Non-blank. Not unique, because different authors can share a name. |
-| Nationality | yes | NULL when unknown, or not applicable (ancient or stateless authors). |
-| Bio | yes | |
+| PersonID | no | PK |
+| Name | no | Non-blank. Not unique, because different people can share a name. |
+| Biography | yes | |
 
-Seed data: one Author with Name `Anonymous`. Every anonymous Work points to this row, so `Work.AuthorID` stays NOT NULL.
+Seed data: one sentinel row with Name `unknown`. It is used both for unknown authors and for unknown translators (D-027).
 
 ### Work
-The whole work a Passage is taken from.
+A complete work, either an original or a translation. A translation is its own Work, linked to the Work it was translated from.
 
 | Column | Null | Constraints |
 |---|---|---|
-| ID | no | PK |
-| Name | no | Non-blank. UNIQUE (AuthorID, Name). |
-| AuthorID | no | FK → Author.ID, ON DELETE RESTRICT. |
-| CreationYearStart | yes | Integer, ≠ 0. Earliest possible year of creation. NULL = no known lower bound. |
-| CreationYearEnd | yes | Integer, ≠ 0. Latest possible year of creation. NULL = no known upper bound. |
-
-Table rule: CHECK (CreationYearStart <= CreationYearEnd) when both are set.
-- An exact year is stored with Start = End.
-- An unknown date is stored with both NULL.
-
-### Passage
-An excerpt from a Work. A Passage is the unit the reader sees.
-
-| Column | Null | Constraints |
-|---|---|---|
-| ID | no | PK |
-| WorkID | no | FK → Work.ID, ON DELETE RESTRICT. Indexed. |
-| Form | no | CHECK IN a fixed list. Starting set: `verse`, `prose`, `drama`. The final list is open (D-017). |
-| Context | yes | NULL when not applicable, for example when the passage stands on its own. |
-
-### Text
-The wording of a Passage in one language: either the original or a translation.
-
-| Column | Null | Constraints |
-|---|---|---|
-| ID | no | PK |
-| PassageID | no | FK → Passage.ID, ON DELETE CASCADE. Indexed. |
-| Content | no | Non-blank. |
-| Translator | yes | NULL means this Text is the original. A translation by an unknown translator stores `Unknown`. Non-blank when set. |
-| Language | no | ISO 639 code. CHECK on the format. `und` = undetermined. |
+| WorkID | no | PK |
+| Name | no | Non-blank. |
+| AuthorID | no | FK → Person, ON DELETE RESTRICT. Indexed. |
+| CreationYearStart | no | ≠ 0. For a translation, the years the translation was made (D-029). |
+| CreationYearEnd | no | ≠ 0. |
+| Language | no | ISO 639 code (CHECK: 2 or 3 lowercase letters). The language of this Work itself (D-024). |
+| TranslationOf | yes | FK → Work, ON DELETE RESTRICT. Indexed. CHECK TranslationOf <> WorkID. NULL means this Work is an original. |
+| TranslatorID | yes | FK → Person, ON DELETE RESTRICT. Indexed. |
 
 Table rules:
-- Partial UNIQUE (PassageID) WHERE Translator IS NULL. A Passage has at most one original.
-- UNIQUE (PassageID, Language, Translator).
+- CHECK (CreationYearStart <= CreationYearEnd).
+- CHECK ((TranslationOf IS NULL) = (TranslatorID IS NULL)):
+  - An original has no translator.
+  - A translation always has a translator. If the translator is unknown, it is the `unknown` Person row.
+- UNIQUE NULLS NOT DISTINCT (AuthorID, Name, Language, TranslatorID).
+- A translation may itself be translated. Relay translations are allowed (D-023).
+
+### Passage
+An excerpt, independent of any single wording. Its wordings are stored in PassageText, one per Work.
+
+| Column | Null | Constraints |
+|---|---|---|
+| PassageID | no | PK |
+| OriginalWorkID | no | FK → Work, ON DELETE RESTRICT. Indexed. The original Work the passage comes from (D-028). |
+| Form | no | Enum `passage_form`: `verse`, `prose`, `drama`. The final list is open (D-017). |
+| Context | yes | |
+
+A Passage may have no PassageText (D-030).
+
+### PassageText
+The wording of a Passage as it appears in one Work: the original or a translation.
+
+| Column | Null | Constraints |
+|---|---|---|
+| PassageID | no | PK part. FK → Passage, ON DELETE CASCADE. |
+| WorkID | no | PK part. FK → Work, ON DELETE RESTRICT. Indexed. |
+| Content | no | Non-blank. |
 
 ### Tag
-A theme, motif, emotion or ambiance that passages can be labelled with. Tags are kept in one table, and the kind is stored in `Type`.
+A theme, motif, emotion or ambiance that passages can be labelled with.
 
 | Column | Null | Constraints |
 |---|---|---|
-| ID | no | PK |
+| TagID | no | PK |
 | Name | no | Non-blank. UNIQUE (Type, Name). |
-| Type | no | CHECK IN (`theme`, `motif`, `emotion`, `ambiance`). |
+| Type | no | Enum `tag_type`: `theme`, `motif`, `emotion`, `ambiance`. |
 
 ### PassageTag
-Links a Passage to a Tag, with a weight saying how strongly the tag applies.
+Links a Passage to a Tag.
 
 | Column | Null | Constraints |
 |---|---|---|
-| PassageID | no | PK part. FK → Passage.ID, ON DELETE CASCADE. |
-| TagID | no | PK part. FK → Tag.ID, ON DELETE CASCADE. Indexed, for "passages by tag". |
-| Strength | no | DECIMAL(3,2). CHECK (Strength > 0 AND Strength <= 1). A value of 0 would mean "no link", so it is excluded. |
+| PassageID | no | PK part. FK → Passage, ON DELETE CASCADE. |
+| TagID | no | PK part. FK → Tag, ON DELETE CASCADE. Indexed, for "passages by tag". |
 
 ## Relationships
 | From | To | Cardinality | On delete |
 |---|---|---|---|
-| Author | Work | one Author has zero or many Works; each Work has exactly one Author | RESTRICT |
-| Work | Passage | one Work has zero or many Passages; each Passage has exactly one Work | RESTRICT |
-| Passage | Text | one Passage has zero or many Texts; each Text belongs to exactly one Passage | CASCADE |
-| Passage | Tag | many-to-many through PassageTag | CASCADE (on PassageTag rows) |
+| Person | Work (author) | a Person authors zero or many Works; each Work has exactly one author | RESTRICT |
+| Person | Work (translator) | a Person translates zero or many Works; each Work has zero or one translator | RESTRICT |
+| Work | Work (translation) | a Work has zero or many translations; each Work translates zero or one Work | RESTRICT |
+| Work | Passage | an original Work has zero or many Passages; each Passage has exactly one original Work | RESTRICT |
+| Passage | Work | many-to-many through PassageText; a Passage has zero or many PassageTexts | CASCADE from Passage, RESTRICT from Work |
+| Passage | Tag | many-to-many through PassageTag | CASCADE |
 
-Every relationship rule above is enforced with keys and CHECK constraints. No rules are left for the application to enforce.
+## Backend rules
+These rules compare several rows, so CHECK constraints can't express them. The backend and the content loader enforce them.
+1. A translation's `AuthorID` equals the `AuthorID` of the Work it translates.
+2. `TranslationOf` chains must not loop (A → B → A).
+3. `Passage.OriginalWorkID` points to an original, meaning a Work whose `TranslationOf` is NULL.
+4. Each PassageText's Work is either the Passage's `OriginalWorkID` or a translation whose `TranslationOf` chain leads back to it.
 
 ## Connections
-Connections between passages are a **planned system**. They are not part of the MVP or v1.0 schema, and neither schema has a table for them.
-In the MVP, readers find related passages with a tag browser instead: they pick a Tag and see its Passages through PassageTag.
+Connections between passages are a **planned system**. They are not part of the schema.
+In the MVP, readers find related passages with a tag browser instead: they pick a Tag and see its Passages through PassageTag (D-015).
 How connections will work is an open question (D-016).
 
 ## MVP schema
-The MVP has the same six tables and constraints as v1.0, with one difference. **Work is thin**: it has only `ID`, `Name` and `AuthorID`.
-
-| Table | MVP difference |
-|---|---|
-| Author | none |
-| Work | `CreationYearStart` and `CreationYearEnd` and their CHECKs are left out |
-| Passage | none |
-| Text | none |
-| Tag | none |
-| PassageTag | none |
-
-The MVP is a strict subset of v1.0. Upgrading is purely additive: add the two nullable year columns and their CHECKs. No data needs to be migrated.
-
-## Deliberately left out
-- **Passage connections**: planned, not in the MVP or v1.0 (see Connections).
-- **Work creation years**: left out of the MVP, added in v1.0.
-- **Work original language**: removed (D-013).
+The MVP schema will be derived from this revision (D-026).
 
 ## Open questions
-- How do connections between passages work? Are they typed (similar theme, same motif, contrast) or plain links? Are they derived from shared tags or stored? (D-016)
+- How do connections between passages work? Are they typed or plain links? Are they derived from shared tags or stored? (D-016)
 - What is the final list of `Passage.Form` values? (D-017)
+- Which parts of this schema are in the MVP? (D-026)
