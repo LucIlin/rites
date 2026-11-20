@@ -241,3 +241,20 @@
 - **Why:** Cheap, and a passage without text fails the mandatory checks anyway.
 - **Rejected options:** none stated
 - **Updated:** `docs/02-data-model.md` (Passage, Relationships)
+
+## D-031: GUID primary keys, fixed in seed files
+- **Date:** 2026-11-20
+- **Status:** DECIDED
+- **Decision:** Every table uses a UUID primary key, version 7 (`Guid.CreateVersion7()`). Catalog rows (Work, Passage, Person, Tag) get their GUIDs written into the seed files, and the database never creates them. The composite keys of PassageText and PassageTag are made of those GUIDs. A catalog row's GUID never changes once it has been seeded. A script may fill in missing GUIDs in the seed files once, and after that they are permanent.
+- **Why:** The database is a read-mostly, seeded catalog, so the usual cost of GUIDs (index page splits on insert) doesn't apply; indexes can be rebuilt after a large seed if needed. Key size (16 bytes vs 4 or 8) is irrelevant at the expected scale. Seeded databases are rebuilt often, and GUIDs in the seed files keep each row's identity the same on every database. Seed files for different works can be prepared separately without coordinating ID ranges.
+- **Rejected options:** Auto-increment IDs – they change when the seed order changes, which would break bookmarks, cached app data and shared links.
+- **Trade-offs:** IDs are hard to read while debugging.
+- **Updated:** `docs/02-data-model.md` (Conventions, Entities diagram, entity tables, Person seed), `docs/07-content-sourcing.md` (Loading)
+
+## D-032: Language as a natural-key table
+- **Date:** 2026-11-20
+- **Status:** OPEN
+- **Decision:** The ID decision names Language as the one table that would use its ISO code (`en`, `grc`, `pt-BR`) as a natural key instead of a GUID. The schema has no Language table yet. `Work.Language` stays a text column with its current format check, which does not accept region tags such as `pt-BR`.
+- **Why:** none stated
+- **Rejected options:** none stated
+- **Updated:** `docs/02-data-model.md` (Open questions)

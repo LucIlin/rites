@@ -4,8 +4,10 @@ Status: v1.0 schema, revision 2 (D-019). PostgreSQL database accessed through EF
 This document is the source of truth for database design (D-018).
 
 ## Conventions
-- Each entity has a surrogate primary key named `<Entity>ID`, generated as an identity column.
-  The link tables PassageText and PassageTag use composite keys.
+- Each entity has a surrogate primary key named `<Entity>ID`. Keys are UUIDs, version 7 (`Guid.CreateVersion7()`) (D-031).
+  The link tables PassageText and PassageTag use composite keys made of those UUIDs.
+- Catalog rows (Person, Work, Passage, Tag) get their UUIDs from the seed files. The database never generates them, so key columns have no default.
+- A catalog row's UUID never changes once it has been seeded (D-031).
 - Every column is required (NOT NULL) unless it is marked nullable.
 - A required text column must also be non-blank (not only whitespace).
 - Years are integers. Negative years are BCE and positive years are CE. There is no year 0.
@@ -29,39 +31,39 @@ erDiagram
     Tag ||--o{ PassageTag : labels
 
     Person {
-        int PersonID PK
+        uuid PersonID PK
         string Name
         string Biography "nullable"
     }
     Work {
-        int WorkID PK
+        uuid WorkID PK
         string Name
-        int AuthorID FK
+        uuid AuthorID FK
         int CreationYearStart
         int CreationYearEnd
         string Language
-        int TranslationOf FK "nullable"
-        int TranslatorID FK "nullable"
+        uuid TranslationOf FK "nullable"
+        uuid TranslatorID FK "nullable"
     }
     Passage {
-        int PassageID PK
-        int OriginalWorkID FK
+        uuid PassageID PK
+        uuid OriginalWorkID FK
         passage_form Form
         string Context "nullable"
     }
     PassageText {
-        int PassageID PK, FK
-        int WorkID PK, FK
+        uuid PassageID PK, FK
+        uuid WorkID PK, FK
         string Content
     }
     Tag {
-        int TagID PK
+        uuid TagID PK
         string Name
         tag_type Type
     }
     PassageTag {
-        int PassageID PK, FK
-        int TagID PK, FK
+        uuid PassageID PK, FK
+        uuid TagID PK, FK
     }
 ```
 
@@ -70,25 +72,25 @@ A person credited as the author or the translator of a Work.
 
 | Column | Null | Constraints |
 |---|---|---|
-| PersonID | no | PK |
+| PersonID | no | PK, UUID. |
 | Name | no | Non-blank. Not unique, because different people can share a name. |
 | Biography | yes | |
 
-Seed data: one sentinel row with Name `unknown`. It is used both for unknown authors and for unknown translators (D-027).
+Seed data: one sentinel row with Name `unknown` and a fixed UUID in the seed file. It is used both for unknown authors and for unknown translators (D-027).
 
 ### Work
 A complete work, either an original or a translation. A translation is its own Work, linked to the Work it was translated from.
 
 | Column | Null | Constraints |
 |---|---|---|
-| WorkID | no | PK |
+| WorkID | no | PK, UUID. |
 | Name | no | Non-blank. |
-| AuthorID | no | FK → Person, ON DELETE RESTRICT. Indexed. |
+| AuthorID | no | UUID, FK → Person, ON DELETE RESTRICT. Indexed. |
 | CreationYearStart | no | ≠ 0. For a translation, the years the translation was made (D-029). |
 | CreationYearEnd | no | ≠ 0. |
 | Language | no | ISO 639 code (CHECK: 2 or 3 lowercase letters). The language of this Work itself (D-024). |
-| TranslationOf | yes | FK → Work, ON DELETE RESTRICT. Indexed. CHECK TranslationOf <> WorkID. NULL means this Work is an original. |
-| TranslatorID | yes | FK → Person, ON DELETE RESTRICT. Indexed. |
+| TranslationOf | yes | UUID, FK → Work, ON DELETE RESTRICT. Indexed. CHECK TranslationOf <> WorkID. NULL means this Work is an original. |
+| TranslatorID | yes | UUID, FK → Person, ON DELETE RESTRICT. Indexed. |
 
 Table rules:
 - CHECK (CreationYearStart <= CreationYearEnd).
@@ -103,8 +105,8 @@ An excerpt, independent of any single wording. Its wordings are stored in Passag
 
 | Column | Null | Constraints |
 |---|---|---|
-| PassageID | no | PK |
-| OriginalWorkID | no | FK → Work, ON DELETE RESTRICT. Indexed. The original Work the passage comes from (D-028). |
+| PassageID | no | PK, UUID. |
+| OriginalWorkID | no | UUID, FK → Work, ON DELETE RESTRICT. Indexed. The original Work the passage comes from (D-028). |
 | Form | no | Enum `passage_form`: `verse`, `prose`, `drama`. The final list is open (D-017). |
 | Context | yes | |
 
@@ -115,8 +117,8 @@ The wording of a Passage as it appears in one Work: the original or a translatio
 
 | Column | Null | Constraints |
 |---|---|---|
-| PassageID | no | PK part. FK → Passage, ON DELETE CASCADE. |
-| WorkID | no | PK part. FK → Work, ON DELETE RESTRICT. Indexed. |
+| PassageID | no | PK part. UUID, FK → Passage, ON DELETE CASCADE. |
+| WorkID | no | PK part. UUID, FK → Work, ON DELETE RESTRICT. Indexed. |
 | Content | no | Non-blank. |
 
 ### Tag
@@ -124,7 +126,7 @@ A theme, motif, emotion or ambiance that passages can be labelled with.
 
 | Column | Null | Constraints |
 |---|---|---|
-| TagID | no | PK |
+| TagID | no | PK, UUID. |
 | Name | no | Non-blank. UNIQUE (Type, Name). |
 | Type | no | Enum `tag_type`: `theme`, `motif`, `emotion`, `ambiance`. |
 
@@ -133,8 +135,8 @@ Links a Passage to a Tag.
 
 | Column | Null | Constraints |
 |---|---|---|
-| PassageID | no | PK part. FK → Passage, ON DELETE CASCADE. |
-| TagID | no | PK part. FK → Tag, ON DELETE CASCADE. Indexed, for "passages by tag". |
+| PassageID | no | PK part. UUID, FK → Passage, ON DELETE CASCADE. |
+| TagID | no | PK part. UUID, FK → Tag, ON DELETE CASCADE. Indexed, for "passages by tag". |
 
 ## Relationships
 | From | To | Cardinality | On delete |
@@ -165,3 +167,4 @@ The MVP schema will be derived from this revision (D-026).
 - How do connections between passages work? Are they typed or plain links? Are they derived from shared tags or stored? (D-016)
 - What is the final list of `Passage.Form` values? (D-017)
 - Which parts of this schema are in the MVP? (D-026)
+- Should Language become a table keyed by its ISO code (`en`, `grc`, `pt-BR`)? Until then, `Work.Language` stays a text column. (D-032)
