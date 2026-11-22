@@ -22,6 +22,7 @@ Only record a decision when the user explicitly confirms it ("log that", "decide
 | `docs/05-build-plan.md` | Order of work, steps, "done when" checks |
 | `docs/06-design-notes.md` | Screen layout, look and feel |
 | `docs/07-content-sourcing.md` | Content sources and usage rights |
+| `docs/08-passage-text-format.md` | Format of PassageText.Content: blocks, lines, runs, marks, notes |
 
 A decision can affect several files. For example, a new field in the data model may change endpoints in the API contract. Update every affected file so the docs stay consistent.
 

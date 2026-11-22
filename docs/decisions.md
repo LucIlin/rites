@@ -253,8 +253,48 @@
 
 ## D-032: Language as a natural-key table
 - **Date:** 2026-11-20
+- **Status:** DECIDED (2026-11-23)
+- **Decision:** Add a `Language` table keyed by a BCP 47 tag, with `Name` and `Direction` ('ltr'/'rtl'). `Work.Language` becomes a foreign key to `Language.Tag`. Every `lang` value in text JSON must exist in `Language` (checked by the backend). The tag format is defined in D-033.
+- **Why:** Direction belongs to the script, not the language, so storing `Direction` once keeps backend, Android and iOS from deriving different answers. A table also stops well-formed but non-existent codes and gives the apps display names.
+- **Rejected options:** Text column with a format check only (accepts non-existent codes; each platform derives direction on its own). Deriving direction from the language alone (fails for languages written in scripts with different directions).
+- **Updated:** `docs/02-data-model.md` (Language table, Work.Language FK; remove from Open questions)
+
+## D-033: Language tag format
+- **Date:** 2026-11-23
+- **Status:** DECIDED
+- **Decision:** Language tags follow BCP 47: language (2–3 lowercase letters), optional script (4 letters, capitalised), optional region (2 uppercase letters or 3 digits), e.g. `en`, `grc`, `pt-BR`, `zh-Hant`. Tags use the shortest correct form; a script or region is added only when it changes something. Enforced by a format check on `Language.Tag`: `^[a-z]{2,3}(-[A-Z][a-z]{3})?(-([A-Z]{2}|[0-9]{3}))?$`
+- **Why:** The previous check rejected region and script tags the data needs (`pt-BR`, `zh-Hant`). BCP 47 is what .NET, Android and iOS use, so tags pass through every layer unchanged. One canonical letter case stops `pt-BR` and `PT-br` from becoming two values.
+- **Rejected options:** Bare ISO 639 codes only (can't express script or region).
+- **Updated:** `docs/02-data-model.md` (Language.Tag constraint)
+
+## D-034: Passage text format
+- **Date:** 2026-11-22
 - **Status:** OPEN
-- **Decision:** The ID decision names Language as the one table that would use its ISO code (`en`, `grc`, `pt-BR`) as a natural key instead of a GUID. The schema has no Language table yet. `Work.Language` stays a text column with its current format check, which does not accept region tags such as `pt-BR`.
+- **Decision:** Draft: `PassageText.Content` becomes a JSON document of blocks, lines and inline runs in Rites' own schema, based on TEI and stored in a `jsonb` column. It is versioned with `v`, verse is stored as lines and prose as paragraphs, and text is normalised to NFC. The draft is in `docs/08-passage-text-format.md`.
+- **Why:** Other formats convert to it, so the database is source-agnostic. It keeps every detail the author used to convey meaning. Each verse line is a separate unit. It passes losslessly from PostgreSQL through the backend to both apps, because all three parse JSON natively. It supports as many languages as reasonable.
+- **Rejected options:** XML or HTML – need extra parsers on mobile, and HTML also needs cleaning. Inline formatting as character positions – C#, Kotlin, Swift and PostgreSQL count characters differently, so positions disagree between platforms.
+- **Updated:** `docs/08-passage-text-format.md` (new), `docs/02-data-model.md` (PassageText, Open questions), `CLAUDE.md` (Documentation layout), `.claude/skills/decision-log/SKILL.md` (Where decisions go)
+
+## D-035: Notes in a separate list
+- **Date:** 2026-11-22
+- **Status:** DECIDED
+- **Decision:** Notes in the passage text format are stored in a separate `notes` list at the end of the document, each with an `id` and a `by` (author, translator or editor). Runs point to a note with `note`, and a phrase spanning several runs or lines gives each of its runs the same id.
+- **Why:** none stated
+- **Rejected options:** Notes inline in the runs – none stated
+- **Updated:** `docs/08-passage-text-format.md` (Notes)
+
+## D-036: Stable line ids and line alignment
+- **Date:** 2026-11-22
+- **Status:** REJECTED
+- **Decision:** Lines have no ids of their own, and lines are not aligned between an original and its translations. `n` stays only as the source line number.
+- **Why:** Irrelevant to Rites.
+- **Rejected options:** none stated
+- **Updated:** `docs/08-passage-text-format.md` (Lines)
+
+## D-037: Which marks the MVP draws
+- **Date:** 2026-11-22
+- **Status:** OPEN
+- **Decision:** Undecided. The format can hold everything from day one, and anything an app does not draw shows as plain text. The proposal is to draw what the MVP content needs: stanzas, paragraphs, line breaks, indentation, italic, `lang`, split lines, and speakers and stage directions if drama passages are seeded.
 - **Why:** none stated
 - **Rejected options:** none stated
-- **Updated:** `docs/02-data-model.md` (Open questions)
+- **Updated:** `docs/08-passage-text-format.md` (Open questions)

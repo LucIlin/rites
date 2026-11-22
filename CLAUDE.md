@@ -27,6 +27,7 @@ The project is planned in `docs/`. The files are numbered in reading order. Most
 - `05-build-plan.md`: build plan and sequencing
 - `06-design-notes.md`: design notes
 - `07-content-sourcing.md`: content sourcing
+- `08-passage-text-format.md`: passage text format (draft)
 - `decisions.md`: decision log
 
 When these docs have content, treat them as the source of truth for design intent. Read the relevant ones before implementing anything. When a design decision gets made or changed, record it in `docs/decisions.md`.

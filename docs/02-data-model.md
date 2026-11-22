@@ -6,6 +6,7 @@ This document is the source of truth for database design (D-018).
 ## Conventions
 - Each entity has a surrogate primary key named `<Entity>ID`. Keys are UUIDs, version 7 (`Guid.CreateVersion7()`) (D-031).
   The link tables PassageText and PassageTag use composite keys made of those UUIDs.
+  The exception is Language, which is keyed by its BCP 47 tag (D-032).
 - Catalog rows (Person, Work, Passage, Tag) get their UUIDs from the seed files. The database never generates them, so key columns have no default.
 - A catalog row's UUID never changes once it has been seeded (D-031).
 - Every column is required (NOT NULL) unless it is marked nullable.
@@ -13,8 +14,9 @@ This document is the source of truth for database design (D-018).
 - Years are integers. Negative years are BCE and positive years are CE. There is no year 0.
 - A Work with a known year of creation has the same value in CreationYearStart and CreationYearEnd.
   If the year is unknown, an estimated range is stored (D-022).
-- Language codes follow ISO 639. `und` (undetermined) is used when the language is unknown.
-- Enumerations (`Passage.Form`, `Tag.Type`) are PostgreSQL enum types (D-025).
+- Language tags follow BCP 47, in the shortest correct form (D-033). `und` (undetermined) is used when the language is unknown,
+  so it is a seeded Language row.
+- Enumerations (`Passage.Form`, `Tag.Type`, `Language.Direction`) are PostgreSQL enum types (D-025).
 - Unknown authors and translators point to the sentinel Person row `unknown` (D-027).
 
 ## Entities
@@ -23,6 +25,7 @@ This document is the source of truth for database design (D-018).
 erDiagram
     Person ||--o{ Work : "authors"
     Person |o--o{ Work : "translates"
+    Language ||--o{ Work : "written in"
     Work |o--o{ Work : "translated as"
     Work ||--o{ Passage : "original of"
     Work ||--o{ PassageText : "holds"
@@ -35,13 +38,18 @@ erDiagram
         string Name
         string Biography "nullable"
     }
+    Language {
+        string Tag PK
+        string Name
+        language_direction Direction
+    }
     Work {
         uuid WorkID PK
         string Name
         uuid AuthorID FK
         int CreationYearStart
         int CreationYearEnd
-        string Language
+        string Language FK
         uuid TranslationOf FK "nullable"
         uuid TranslatorID FK "nullable"
     }
@@ -78,6 +86,17 @@ A person credited as the author or the translator of a Work.
 
 Seed data: one sentinel row with Name `unknown` and a fixed UUID in the seed file. It is used both for unknown authors and for unknown translators (D-027).
 
+### Language
+A language, keyed by its BCP 47 tag (D-032).
+
+| Column | Null | Constraints |
+|---|---|---|
+| Tag | no | PK. BCP 47 tag in shortest correct form (D-033). CHECK `Tag ~ '^[a-z]{2,3}(-[A-Z][a-z]{3})?(-([A-Z]{2}\|[0-9]{3}))?$'`. |
+| Name | no | Non-blank. |
+| Direction | no | Enum `language_direction`: `ltr`, `rtl`. The reading and writing direction of the language. |
+
+Seed data: one row with Tag `und` for an unknown language, with Direction `ltr`.
+
 ### Work
 A complete work, either an original or a translation. A translation is its own Work, linked to the Work it was translated from.
 
@@ -88,7 +107,7 @@ A complete work, either an original or a translation. A translation is its own W
 | AuthorID | no | UUID, FK → Person, ON DELETE RESTRICT. Indexed. |
 | CreationYearStart | no | ≠ 0. For a translation, the years the translation was made (D-029). |
 | CreationYearEnd | no | ≠ 0. |
-| Language | no | ISO 639 code (CHECK: 2 or 3 lowercase letters). The language of this Work itself (D-024). |
+| Language | no | FK → Language.Tag, ON DELETE RESTRICT. Indexed. The language of this Work itself (D-024, D-032). |
 | TranslationOf | yes | UUID, FK → Work, ON DELETE RESTRICT. Indexed. CHECK TranslationOf <> WorkID. NULL means this Work is an original. |
 | TranslatorID | yes | UUID, FK → Person, ON DELETE RESTRICT. Indexed. |
 
@@ -121,6 +140,8 @@ The wording of a Passage as it appears in one Work: the original or a translatio
 | WorkID | no | PK part. UUID, FK → Work, ON DELETE RESTRICT. Indexed. |
 | Content | no | Non-blank. |
 
+The format of `Content` is drafted in `08-passage-text-format.md` (D-034). `Content` stays a text column until it is decided.
+
 ### Tag
 A theme, motif, emotion or ambiance that passages can be labelled with.
 
@@ -141,6 +162,7 @@ Links a Passage to a Tag.
 ## Relationships
 | From | To | Cardinality | On delete |
 |---|---|---|---|
+| Language | Work | a Language has zero or many Works; each Work has exactly one Language | RESTRICT |
 | Person | Work (author) | a Person authors zero or many Works; each Work has exactly one author | RESTRICT |
 | Person | Work (translator) | a Person translates zero or many Works; each Work has zero or one translator | RESTRICT |
 | Work | Work (translation) | a Work has zero or many translations; each Work translates zero or one Work | RESTRICT |
@@ -154,6 +176,7 @@ These rules compare several rows, so CHECK constraints can't express them. The b
 2. `TranslationOf` chains must not loop (A → B → A).
 3. `Passage.OriginalWorkID` points to an original, meaning a Work whose `TranslationOf` is NULL.
 4. Each PassageText's Work is either the Passage's `OriginalWorkID` or a translation whose `TranslationOf` chain leads back to it.
+5. Every `lang` value in a PassageText's text JSON exists in `Language` (D-032).
 
 ## Connections
 Connections between passages are a **planned system**. They are not part of the schema.
@@ -167,4 +190,4 @@ The MVP schema will be derived from this revision (D-026).
 - How do connections between passages work? Are they typed or plain links? Are they derived from shared tags or stored? (D-016)
 - What is the final list of `Passage.Form` values? (D-017)
 - Which parts of this schema are in the MVP? (D-026)
-- Should Language become a table keyed by its ISO code (`en`, `grc`, `pt-BR`)? Until then, `Work.Language` stays a text column. (D-032)
+- Which format does `PassageText.Content` use? The draft is a JSON document in `jsonb`, see `08-passage-text-format.md` (D-034).
