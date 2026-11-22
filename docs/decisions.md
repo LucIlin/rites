@@ -298,3 +298,12 @@
 - **Why:** none stated
 - **Rejected options:** none stated
 - **Updated:** `docs/08-passage-text-format.md` (Open questions)
+
+## D-038: No unknown language
+- **Date:** 2026-11-22
+- **Status:** DECIDED
+- **Decision:** Rites has no unknown-language value. There is no `und` row in Language, and every Work's language is a real tag in Language.
+- **Why:** The concept is far outside the scope of the app.
+- **Rejected options:** `und` sentinel Language row – far outside the scope of the app
+- **Updated:** `docs/02-data-model.md` (Conventions, Language seed data)
+- **Note:** The `und` convention was added to `docs/02-data-model.md` in commit 174ae8f without a log entry.

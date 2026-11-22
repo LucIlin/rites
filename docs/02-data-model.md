@@ -14,8 +14,7 @@ This document is the source of truth for database design (D-018).
 - Years are integers. Negative years are BCE and positive years are CE. There is no year 0.
 - A Work with a known year of creation has the same value in CreationYearStart and CreationYearEnd.
   If the year is unknown, an estimated range is stored (D-022).
-- Language tags follow BCP 47, in the shortest correct form (D-033). `und` (undetermined) is used when the language is unknown,
-  so it is a seeded Language row.
+- Language tags follow BCP 47, in the shortest correct form (D-033).
 - Enumerations (`Passage.Form`, `Tag.Type`, `Language.Direction`) are PostgreSQL enum types (D-025).
 - Unknown authors and translators point to the sentinel Person row `unknown` (D-027).
 
@@ -94,8 +93,6 @@ A language, keyed by its BCP 47 tag (D-032).
 | Tag | no | PK. BCP 47 tag in shortest correct form (D-033). CHECK `Tag ~ '^[a-z]{2,3}(-[A-Z][a-z]{3})?(-([A-Z]{2}\|[0-9]{3}))?$'`. |
 | Name | no | Non-blank. |
 | Direction | no | Enum `language_direction`: `ltr`, `rtl`. The reading and writing direction of the language. |
-
-Seed data: one row with Tag `und` for an unknown language, with Direction `ltr`.
 
 ### Work
 A complete work, either an original or a translation. A translation is its own Work, linked to the Work it was translated from.
