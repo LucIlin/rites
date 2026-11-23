@@ -212,7 +212,7 @@
 
 ## D-027: `unknown` Person for unknown authors and translators
 - **Date:** 2026-11-19
-- **Status:** DECIDED
+- **Status:** SUPERSEDED by D-041
 - **Decision:** A sentinel Person row named `unknown` stands for an unknown author or translator. A translation always has a TranslatorID, and an original never has one.
 - **Why:** none stated
 - **Rejected options:** Seeded `Anonymous` author (D-010) – none stated; NULL TranslatorID for unknown translators – none stated
@@ -310,8 +310,33 @@
 
 ## D-039: Multiple authors and translators per Work
 - **Date:** 2026-11-23
-- **Status:** OPEN
-- **Decision:** Undecided whether a Work can have more than one author and more than one translator. Today it has exactly one `AuthorID` and at most one `TranslatorID`.
+- **Status:** DECIDED (2026-11-23)
+- **Decision:** A Work can have several authors and several translators, stored as WorkContributor rows (D-040).
+- **Why:** none stated
+- **Rejected options:** One `AuthorID` and at most one `TranslatorID` on Work (revision 2) – none stated
+- **Updated:** `docs/02-data-model.md` (Open questions, WorkContributor)
+
+## D-040: Schema revision 3 adopted
+- **Date:** 2026-11-23
+- **Status:** DECIDED
+- **Decision:** The schema follows revision 3 of the ER diagram. WorkContributor (WorkID, PersonID, Role `author`/`translator`) replaces `Work.AuthorID` and `Work.TranslatorID`. Every Work has at least one author row, translator rows exist only on Works with `TranslationOf` set, and a translation's author rows are copied from the Work it was translated from (backend). Contributors are shown sorted by name. Languages are seed data, added through seed files like the rest of the catalog.
+- **Why:** none stated
+- **Rejected options:** Revision 2 (single `AuthorID` and `TranslatorID` on Work) – none stated
+- **Updated:** `docs/02-data-model.md` (Status, Conventions, Entities diagram, Person, Language, Work, WorkContributor, Relationships, Backend rules), `docs/05-build-plan.md` (Step 1), `docs/07-content-sourcing.md` (Loading)
+
+## D-041: Translators and the `unknown` Person
+- **Date:** 2026-11-23
+- **Status:** DECIDED
+- **Decision:** The sentinel Person row `unknown` stands for an unknown author or translator. Every translation has at least one translator row, and if the translator isn't known, the row points to `unknown`. A translation with no translator rows is an error, caught when the backend creates it and by the validation queries after seeding. This supersedes D-027.
 - **Why:** none stated
 - **Rejected options:** none stated
-- **Updated:** `docs/02-data-model.md` (Open questions)
+- **Updated:** `docs/02-data-model.md` (Conventions, Person, Backend rules), `docs/07-content-sourcing.md` (Loading)
+
+## D-042: Duplicate Works handled by seeding
+- **Date:** 2026-11-23
+- **Status:** DECIDED
+- **Decision:** Work has no uniqueness rule. The seeding process handles possible duplicate Works.
+- **Why:** none stated
+- **Rejected options:** none stated
+- **Updated:** `docs/02-data-model.md` (Work), `docs/07-content-sourcing.md` (Loading)
+- **Note:** The line `UNIQUE NULLS NOT DISTINCT (AuthorID, Name, Language, TranslatorID)` was added to `docs/02-data-model.md` in commit 9e00352 without a log entry. It was never a decision and is removed.
