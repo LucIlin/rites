@@ -307,3 +307,11 @@
 - **Rejected options:** `und` sentinel Language row – far outside the scope of the app
 - **Updated:** `docs/02-data-model.md` (Conventions, Language seed data)
 - **Note:** The `und` convention was added to `docs/02-data-model.md` in commit 174ae8f without a log entry.
+
+## D-039: Multiple authors and translators per Work
+- **Date:** 2026-11-23
+- **Status:** OPEN
+- **Decision:** Undecided whether a Work can have more than one author and more than one translator. Today it has exactly one `AuthorID` and at most one `TranslatorID`.
+- **Why:** none stated
+- **Rejected options:** none stated
+- **Updated:** `docs/02-data-model.md` (Open questions)

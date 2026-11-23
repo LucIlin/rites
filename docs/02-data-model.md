@@ -188,3 +188,4 @@ The MVP schema will be derived from this revision (D-026).
 - What is the final list of `Passage.Form` values? (D-017)
 - Which parts of this schema are in the MVP? (D-026)
 - Which format does `PassageText.Content` use? The draft is a JSON document in `jsonb`, see `08-passage-text-format.md` (D-034).
+- Should a Work be able to have more than one author and more than one translator? Today it has exactly one `AuthorID` and at most one `TranslatorID`. (D-039)
