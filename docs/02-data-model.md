@@ -4,12 +4,13 @@ Status: v1.0 schema, revision 3 (D-040). PostgreSQL database accessed through EF
 This document is the source of truth for database design (D-018).
 
 ## Conventions
-- Each entity has a surrogate primary key named `<Entity>ID`. Keys are UUIDs, version 7 (`Guid.CreateVersion7()`) (D-031).
+- Each entity has a surrogate primary key named `<Entity>ID`. Keys are UUIDs, version 7 (`Guid.CreateVersion7()`) (D-043).
   The link tables PassageText, PassageTag and WorkContributor use composite keys made of those UUIDs. WorkContributor's key also includes `Role`.
   The exception is Language, which is keyed by its BCP 47 tag (D-032).
-- Catalog rows (Person, Work, Passage, Tag) get their UUIDs from the seed files. The database never generates them, so key columns have no default.
-- A catalog row's UUID never changes once it has been seeded (D-031).
-- Languages are seed data, added through seed files like the rest of the catalog (D-040).
+- The database is the main source of truth for catalog data (D-043).
+- The backend creates UUIDs with `Guid.CreateVersion7()` when it inserts a row. The database never generates them, so key columns have no default (D-043).
+- A row's UUID never changes once it has been created (D-043).
+- Languages are added by the seeding process like the rest of the catalog (D-040, D-043).
 - Every column is required (NOT NULL) unless it is marked nullable.
 - A required text column must also be non-blank (not only whitespace).
 - Years are integers. Negative years are BCE and positive years are CE. There is no year 0.
@@ -88,7 +89,7 @@ A person credited as an author or a translator of a Work, through WorkContributo
 | Name | no | Non-blank. Not unique, because different people can share a name. |
 | Biography | yes | |
 
-Seed data: one sentinel row with Name `unknown` and a fixed UUID in the seed file. It is used both for unknown authors and for unknown translators (D-041).
+The seeding process creates one sentinel row with Name `unknown`. It is used both for unknown authors and for unknown translators (D-041).
 
 ### Language
 A language, keyed by its BCP 47 tag (D-032).

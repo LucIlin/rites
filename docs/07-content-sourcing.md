@@ -10,12 +10,10 @@ TODO: public domain, licensed, user-submitted. Record the licence for each sourc
 TODO: how author and source are credited in the app.
 
 ## Loading
-Seed files carry the UUID of every catalog row (Person, Work, Passage, Tag) (D-031).
-- A script may fill in missing UUIDs in the seed files once. After that they are permanent and never change.
-- Rebuilding the database from the seed files gives every row the same ID as before.
-- Seed files for different works can be prepared separately, with no shared ID ranges.
-- Languages are seed data too, keyed by their tag instead of a UUID (D-040).
-- The seeding process handles possible duplicate Works (D-042).
+The database is the main source of truth for catalog data. A seeding process loads content into it. It does not read from seed files, and no seed files are kept, because they would go stale (D-043).
+- The backend creates every UUID (version 7) when it inserts a row. A row's UUID never changes once it has been created.
+- Languages are added by the seeding process like the rest of the catalog (D-040).
+- The seeding process handles the checks, including possible duplicate Works (D-042).
 - Validation queries run after seeding and catch a translation with no translator rows (D-041).
 
 TODO: how passages and their attributes enter the database.

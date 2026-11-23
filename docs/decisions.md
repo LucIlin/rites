@@ -244,7 +244,7 @@
 
 ## D-031: GUID primary keys, fixed in seed files
 - **Date:** 2026-11-20
-- **Status:** DECIDED
+- **Status:** SUPERSEDED by D-043
 - **Decision:** Every table uses a UUID primary key, version 7 (`Guid.CreateVersion7()`). Catalog rows (Work, Passage, Person, Tag) get their GUIDs written into the seed files, and the database never creates them. The composite keys of PassageText and PassageTag are made of those GUIDs. A catalog row's GUID never changes once it has been seeded. A script may fill in missing GUIDs in the seed files once, and after that they are permanent.
 - **Why:** The database is a read-mostly, seeded catalog, so the usual cost of GUIDs (index page splits on insert) doesn't apply; indexes can be rebuilt after a large seed if needed. Key size (16 bytes vs 4 or 8) is irrelevant at the expected scale. Seeded databases are rebuilt often, and GUIDs in the seed files keep each row's identity the same on every database. Seed files for different works can be prepared separately without coordinating ID ranges.
 - **Rejected options:** Auto-increment IDs – they change when the seed order changes, which would break bookmarks, cached app data and shared links.
@@ -323,6 +323,7 @@
 - **Why:** none stated
 - **Rejected options:** Revision 2 (single `AuthorID` and `TranslatorID` on Work) – none stated
 - **Updated:** `docs/02-data-model.md` (Status, Conventions, Entities diagram, Person, Language, Work, WorkContributor, Relationships, Backend rules), `docs/05-build-plan.md` (Step 1), `docs/07-content-sourcing.md` (Loading)
+- **Note:** Languages are added by the seeding process, not from seed files (D-043).
 
 ## D-041: Translators and the `unknown` Person
 - **Date:** 2026-11-23
@@ -340,3 +341,11 @@
 - **Rejected options:** none stated
 - **Updated:** `docs/02-data-model.md` (Work), `docs/07-content-sourcing.md` (Loading)
 - **Note:** The line `UNIQUE NULLS NOT DISTINCT (AuthorID, Name, Language, TranslatorID)` was added to `docs/02-data-model.md` in commit 9e00352 without a log entry. It was never a decision and is removed.
+
+## D-043: Database is the source of truth, no seed files
+- **Date:** 2026-11-23
+- **Status:** DECIDED
+- **Decision:** The database is the main source of truth for catalog data. A seeding process loads content into it and handles the checks, but it does not read from seed files, and no seed files are kept. The backend creates UUID v7 primary keys (`Guid.CreateVersion7()`) when it inserts a row; the database never generates them. A row's UUID never changes once it has been created. This supersedes D-031.
+- **Why:** Seed files would not be kept up to date and would turn stale quickly.
+- **Rejected options:** Seed files carrying fixed UUIDs for every catalog row (D-031) – they would go stale
+- **Updated:** `docs/02-data-model.md` (Conventions, Person), `docs/07-content-sourcing.md` (Loading)
