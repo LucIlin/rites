@@ -365,3 +365,41 @@
 - **Why:** none stated
 - **Rejected options:** none stated
 - **Updated:** `docs/04-architecture.md` (Databases), `docs/02-data-model.md` (Conventions), `docs/07-content-sourcing.md` (Loading)
+
+## D-046: Authority control as a database design principle
+- **Date:** 2026-11-24
+- **Status:** DECIDED
+- **Decision:** Authority control is implemented in schema revision 4 and is a design principle for the database from now on.
+- **Why:** none stated
+- **Rejected options:** none stated
+- **Updated:** `docs/02-data-model.md` (Design principles)
+
+## D-047: Schema revision 4 adopted
+- **Date:** 2026-11-24
+- **Status:** DECIDED
+- **Decision:** The schema follows revision 4 of the ER diagram.
+  - Person gains nullable `BirthYear`, `DeathYear` (negative for BCE) and `WikidataID` (UNIQUE). `Person.Name` is the default display name.
+  - New table PersonNameVariant (PersonNameVariantID, PersonID, Name, NormalizedName, LanguageTag, IsPreferred), with UNIQUE (PersonID, NormalizedName, LanguageTag) and a partial UNIQUE (PersonID, LanguageTag) WHERE IsPreferred. `NormalizedName` is lowercase, NFC, accents removed, and filled in by the backend. `IsPreferred` is for localization, not for authority control.
+  - `Work.Language` is renamed `Work.LanguageTag`.
+  - PostgreSQL uses the `unaccent` and `pg_trgm` extensions.
+  - Backend rules for people: search before creating (normalized and similarity search); a human confirms the match and the system never decides; works are attached by PersonID only, never find-or-create by name; new spellings of a confirmed person are recorded as variants; `Person.Name` always has a matching `en` preferred variant, kept in sync; duplicates are merged by moving WorkContributor and variant rows to the kept person and deleting the duplicate in one transaction.
+  - The app shows the preferred variant in the reader's interface language, otherwise `Person.Name`.
+- **Why:** Implements authority control (D-046).
+- **Rejected options:** Revision 3 – none stated
+- **Updated:** `docs/02-data-model.md` (Status, Conventions, Entities diagram, Person, PersonNameVariant, Work, Relationships, Backend rules), `docs/08-passage-text-format.md` (Languages, Search copy), `docs/05-build-plan.md` (Step 1), `docs/04-architecture.md` (Components)
+
+## D-048: `und` for name variants of undetermined language
+- **Date:** 2026-11-24
+- **Status:** REJECTED
+- **Decision:** `PersonNameVariant.LanguageTag` may not be `und`. It is always a real language, and D-038 stands. The check `NOT (IsPreferred AND LanguageTag = 'und')` from the revision 4 diagram is not used.
+- **Why:** none stated
+- **Rejected options:** none stated
+- **Updated:** `docs/02-data-model.md` (PersonNameVariant)
+
+## D-049: English is the default app language
+- **Date:** 2026-11-24
+- **Status:** DECIDED
+- **Decision:** English is the default language for the app. The default display language is `en`, and localized names fall back to the English name.
+- **Why:** none stated
+- **Rejected options:** none stated
+- **Updated:** `docs/01-product.md` (MVP scope), `docs/02-data-model.md` (Conventions)

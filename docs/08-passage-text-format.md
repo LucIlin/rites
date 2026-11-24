@@ -78,7 +78,7 @@ Notes are kept in a separate list at the end of the document, and runs point to 
 
 ## Languages and scripts
 - The database is UTF-8. All text is normalised to NFC on the way in, so "é" stored as one character and "é" stored as a letter plus an accent become identical.
-- The default language of a PassageText is its Work's `Work.Language`. A run carries its own `lang` only where it differs, for example one Greek word kept in an English translation.
+- The default language of a PassageText is its Work's `Work.LanguageTag`. A run carries its own `lang` only where it differs, for example one Greek word kept in an English translation.
 - Every `lang` value is a BCP 47 tag that exists in the `Language` table (D-032, D-033). The backend checks this on every write.
 - Writing direction comes from `Language.Direction` (`ltr` or `rtl`). The format has no direction field, and no platform works out direction on its own. Each run with its own `lang` is bidi-isolated when drawn, so a right-to-left word does not reorder the text around it.
 - `lang` has to reach the app's text renderer, not only its font choice. Chinese, Japanese and Korean share code points that are drawn differently in each language.
@@ -101,7 +101,7 @@ NFC treats some characters as equivalent that a specialist might want kept apart
 - An additive change (a new optional field, mark or block type) keeps `v`. A change that alters the meaning of existing data bumps `v`.
 
 ## Search copy
-A plain-text copy of the content for full-text search is deferred until search is decided for the MVP (D-006). When it is added, the backend builds it from the runs and stores it next to the content. It can't be a generated column, because the search language comes from `Work.Language` in another table.
+A plain-text copy of the content for full-text search is deferred until search is decided for the MVP (D-006). When it is added, the backend builds it from the runs and stores it next to the content. It can't be a generated column, because the search language comes from `Work.LanguageTag` in another table.
 
 ## Conversion from sources
 One converter per source, each producing the same JSON. This keeps the database independent of where the text came from (requirement 1). The sources below are examples. Which sources are used is decided in `07-content-sourcing.md`.

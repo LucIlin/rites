@@ -3,7 +3,7 @@
 Small steps. Each has a "done when" check. Order follows the schema-first approach.
 
 ## Step 1: Data model
-- Do: finish `02-data-model.md` for Person, Language, Work, WorkContributor, Passage, PassageText, Tag and PassageTag. Connections are a planned system and not part of this step (D-015, D-016).
+- Do: finish `02-data-model.md` for Person, PersonNameVariant, Language, Work, WorkContributor, Passage, PassageText, Tag and PassageTag. Connections are a planned system and not part of this step (D-015, D-016).
 - Done when: every field and relationship is written down with no `TODO` left.
 
 ## Step 2: Passage text format

@@ -6,7 +6,7 @@
 | Android   | Kotlin (native) | Mobile client |
 | iOS       | Swift (native)  | Mobile client |
 | Backend   | .NET Core API in C#, EF Core as ORM | Serves passages, authors, works and connections |
-| Database  | PostgreSQL      | Source of truth, schema defined first |
+| Database  | PostgreSQL, with the `unaccent` and `pg_trgm` extensions | Source of truth, schema defined first |
 
 ## How they fit together
 Both apps talk to the one backend through the contract in `03-api-contract.md`.

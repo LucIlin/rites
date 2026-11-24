@@ -19,6 +19,7 @@ than through complete works.
 - Browse passages by tag (the MVP's replacement for connections, see D-015)
 - Authors and Works attached to passages
 - The MVP ships the backend and the Android client first. The iOS client follows after validation and is based on the Android version.
+- English is the default app language (D-049).
 
 TODO: confirm and trim this list.
 

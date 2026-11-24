@@ -1,7 +1,11 @@
 # 02 Data model
 
-Status: v1.0 schema, revision 3 (D-040). PostgreSQL database accessed through EF Core, designed schema-first (D-007).
+Status: v1.0 schema, revision 4 (D-047). PostgreSQL database accessed through EF Core, designed schema-first (D-007).
 This document is the source of truth for database design (D-018).
+
+## Design principles
+- **Authority control** (D-046): each real-world entity is stored once under one ID. A new record is matched against existing ones before it is created,
+  and other rows refer to the entity by ID, never by name. For people this is done with PersonNameVariant and backend rules 9–15.
 
 ## Conventions
 - Each entity has a surrogate primary key named `<Entity>ID`. Keys are UUIDs, version 7 (`Guid.CreateVersion7()`) (D-043).
@@ -21,6 +25,11 @@ This document is the source of truth for database design (D-018).
 - Enumerations (`Passage.Form`, `Tag.Type`, `Language.Direction`, `WorkContributor.Role`) are PostgreSQL enum types (D-025).
 - Unknown authors and translators point to the sentinel Person row `unknown` (D-041).
 - Contributors are shown sorted by name (D-040).
+- PostgreSQL uses the `unaccent` and `pg_trgm` extensions, for name normalisation and similarity search (D-047).
+- The app picks a person's name to show in this order (D-047):
+  1. The preferred PersonNameVariant in the reader's interface language.
+  2. If there isn't one, `Person.Name`.
+- English (`en`) is the default app language. Localized names fall back to the English name (D-049).
 
 ## Entities
 
@@ -29,6 +38,8 @@ erDiagram
     Work ||--|{ WorkContributor : "credits"
     Person ||--o{ WorkContributor : "credited in"
     Language ||--o{ Work : "written in"
+    Person ||--|{ PersonNameVariant : "named as"
+    Language ||--o{ PersonNameVariant : "spelling language"
     Work |o--o{ Work : "translated as"
     Work ||--o{ Passage : "original of"
     Work ||--o{ PassageText : "holds"
@@ -39,7 +50,18 @@ erDiagram
     Person {
         uuid PersonID PK
         string Name
+        int BirthYear "nullable"
+        int DeathYear "nullable"
+        string WikidataID "nullable"
         string Biography "nullable"
+    }
+    PersonNameVariant {
+        uuid PersonNameVariantID PK
+        uuid PersonID FK
+        string Name
+        string NormalizedName
+        string LanguageTag FK
+        bool IsPreferred
     }
     Language {
         string Tag PK
@@ -51,7 +73,7 @@ erDiagram
         string Name
         int CreationYearStart
         int CreationYearEnd
-        string Language FK
+        string LanguageTag FK
         uuid TranslationOf FK "nullable"
     }
     WorkContributor {
@@ -87,10 +109,29 @@ A person credited as an author or a translator of a Work, through WorkContributo
 | Column | Null | Constraints |
 |---|---|---|
 | PersonID | no | PK, UUID. |
-| Name | no | Non-blank. Not unique, because different people can share a name. |
+| Name | no | Non-blank. The default display name. Not unique, because different people can share a name. |
+| BirthYear | yes | ≠ 0. Negative for BCE. Tells same-name people apart. |
+| DeathYear | yes | ≠ 0. Negative for BCE. Tells same-name people apart. |
+| WikidataID | yes | UNIQUE: two people can't claim the same identity. A spelling-independent identity. |
 | Biography | yes | |
 
 The seeding process creates one sentinel row with Name `unknown` and the GUID hardcoded in the backend (D-044). It is used both for unknown authors and for unknown translators (D-041).
+
+### PersonNameVariant
+One spelling of a Person's name (D-047). Variants support authority control (D-046): matching runs against them.
+
+| Column | Null | Constraints |
+|---|---|---|
+| PersonNameVariantID | no | PK, UUID. |
+| PersonID | no | UUID, FK → Person, ON DELETE CASCADE. |
+| Name | no | Non-blank. The spelling as written. |
+| NormalizedName | no | Lowercase, NFC, accents removed. Filled in by the backend and used for matching. GIN trigram index (`pg_trgm`). |
+| LanguageTag | no | FK → Language.Tag, ON DELETE RESTRICT. Indexed. Always a real language, never `und` (D-038, D-048). |
+| IsPreferred | no | Boolean. Used for localization, not for authority control. |
+
+Table rules:
+- UNIQUE (PersonID, NormalizedName, LanguageTag): no repeated spellings per person and language.
+- Partial UNIQUE (PersonID, LanguageTag) WHERE IsPreferred: at most one preferred name per person and language.
 
 ### Language
 A language, keyed by its BCP 47 tag (D-032).
@@ -110,7 +151,7 @@ A complete work, either an original or a translation. A translation is its own W
 | Name | no | Non-blank. |
 | CreationYearStart | no | ≠ 0. For a translation, the years the translation was made (D-029). |
 | CreationYearEnd | no | ≠ 0. |
-| Language | no | FK → Language.Tag, ON DELETE RESTRICT. Indexed. The language of this Work itself (D-024, D-032). |
+| LanguageTag | no | FK → Language.Tag, ON DELETE RESTRICT. Indexed. The language of this Work itself (D-024, D-032, D-047). |
 | TranslationOf | yes | UUID, FK → Work, ON DELETE RESTRICT. Indexed. CHECK TranslationOf <> WorkID. NULL means this Work is an original. |
 
 Table rules:
@@ -173,6 +214,8 @@ Links a Passage to a Tag.
 |---|---|---|---|
 | Language | Work | a Language has zero or many Works; each Work has exactly one Language | RESTRICT |
 | Person | Work | many-to-many through WorkContributor; each Work has at least one author row | CASCADE from Work, RESTRICT from Person |
+| Person | PersonNameVariant | a Person has one or many variants (backend rule 14); each variant belongs to exactly one Person | CASCADE |
+| Language | PersonNameVariant | a Language has zero or many variants; each variant has exactly one Language | RESTRICT |
 | Work | Work (translation) | a Work has zero or many translations; each Work translates zero or one Work | RESTRICT |
 | Work | Passage | an original Work has zero or many Passages; each Passage has exactly one original Work | RESTRICT |
 | Passage | Work | many-to-many through PassageText; a Passage has zero or many PassageTexts | CASCADE from Passage, RESTRICT from Work |
@@ -189,6 +232,16 @@ These rules compare several rows, so CHECK constraints can't express them. The b
 7. Translator rows exist only on Works with `TranslationOf` set (D-040).
 8. Every translation has at least one translator row. If the translator isn't known, the row points to the `unknown` Person.
    A translation with no translator rows is an error, caught when the backend creates it and by the validation queries after seeding (D-041).
+
+Authority control for people (D-046, D-047):
+
+9. Search before creating a Person. Look up `NormalizedName` across all variants, plus a similarity search to catch near-misses.
+10. A human confirms the match, using dates, Wikidata ID and existing works. The system suggests and never decides.
+11. Works are attached to a Person by `PersonID` only. The caller picks an existing person or explicitly creates a new one. Never find-or-create by name.
+12. A spelling not yet known for a confirmed person is added as a variant.
+13. `NormalizedName` is always filled in by the backend.
+14. `Person.Name` always has a matching variant row, with LanguageTag `en` and IsPreferred true. It is kept in sync when `Person.Name` changes.
+15. Merge: move the WorkContributor and variant rows to the person you keep, then delete the duplicate, all in one transaction.
 
 ## Connections
 Connections between passages are a **planned system**. They are not part of the schema.
