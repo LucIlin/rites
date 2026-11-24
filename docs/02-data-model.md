@@ -7,9 +7,10 @@ This document is the source of truth for database design (D-018).
 - Each entity has a surrogate primary key named `<Entity>ID`. Keys are UUIDs, version 7 (`Guid.CreateVersion7()`) (D-043).
   The link tables PassageText, PassageTag and WorkContributor use composite keys made of those UUIDs. WorkContributor's key also includes `Role`.
   The exception is Language, which is keyed by its BCP 47 tag (D-032).
-- The database is the main source of truth for catalog data (D-043).
+- One database is the source of truth for catalog data. After launch, that is production. Other databases are created from dumps of it and never create rows of their own (D-043, D-045).
 - The backend creates UUIDs with `Guid.CreateVersion7()` when it inserts a row. The database never generates them, so key columns have no default (D-043).
-- A row's UUID never changes once it has been created (D-043).
+- A row's UUID never changes once it has been created (D-043), and stays the same across databases unless exceptions apply (D-045).
+- The exception to backend-created UUIDs is the `unknown` Person, whose GUID is hardcoded in the backend (D-044).
 - Languages are added by the seeding process like the rest of the catalog (D-040, D-043).
 - Every column is required (NOT NULL) unless it is marked nullable.
 - A required text column must also be non-blank (not only whitespace).
@@ -89,7 +90,7 @@ A person credited as an author or a translator of a Work, through WorkContributo
 | Name | no | Non-blank. Not unique, because different people can share a name. |
 | Biography | yes | |
 
-The seeding process creates one sentinel row with Name `unknown`. It is used both for unknown authors and for unknown translators (D-041).
+The seeding process creates one sentinel row with Name `unknown` and the GUID hardcoded in the backend (D-044). It is used both for unknown authors and for unknown translators (D-041).
 
 ### Language
 A language, keyed by its BCP 47 tag (D-032).

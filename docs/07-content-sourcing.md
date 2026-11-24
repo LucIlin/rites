@@ -10,7 +10,7 @@ TODO: public domain, licensed, user-submitted. Record the licence for each sourc
 TODO: how author and source are credited in the app.
 
 ## Loading
-The database is the main source of truth for catalog data. A seeding process loads content into it. It does not read from seed files, and no seed files are kept, because they would go stale (D-043).
+The source-of-truth database (production, after launch) holds the catalog (D-045). A seeding process loads content into it, and only into it; other databases receive copies through dumps. It does not read from seed files, and no seed files are kept, because they would go stale (D-043).
 - The backend creates every UUID (version 7) when it inserts a row. A row's UUID never changes once it has been created.
 - Languages are added by the seeding process like the rest of the catalog (D-040).
 - The seeding process handles the checks, including possible duplicate Works (D-042).

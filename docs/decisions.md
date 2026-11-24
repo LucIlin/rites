@@ -349,3 +349,19 @@
 - **Why:** Seed files would not be kept up to date and would turn stale quickly.
 - **Rejected options:** Seed files carrying fixed UUIDs for every catalog row (D-031) – they would go stale
 - **Updated:** `docs/02-data-model.md` (Conventions, Person), `docs/07-content-sourcing.md` (Loading)
+
+## D-044: Hardcoded GUID for the `unknown` Person
+- **Date:** 2026-11-24
+- **Status:** DECIDED
+- **Decision:** The sentinel Person row `unknown` has a GUID hardcoded in the backend. The seeding process inserts the row with that GUID, and the backend uses it for unknown authors and translators. This is the one exception to the backend creating a UUID v7 at insert (D-043).
+- **Why:** none stated
+- **Rejected options:** none stated
+- **Updated:** `docs/02-data-model.md` (Conventions, Person)
+
+## D-045: One source-of-truth database, others from dumps
+- **Date:** 2026-11-24
+- **Status:** DECIDED
+- **Decision:** One database is the source of truth; after launch, that is production. Other databases are sourced from dumps of it, with sensitive data rows mocked instead of copied. New rows are created only in the source-of-truth database, and other databases only receive copies. UUIDs remain constant across databases unless exceptions apply.
+- **Why:** none stated
+- **Rejected options:** none stated
+- **Updated:** `docs/04-architecture.md` (Databases), `docs/02-data-model.md` (Conventions), `docs/07-content-sourcing.md` (Loading)

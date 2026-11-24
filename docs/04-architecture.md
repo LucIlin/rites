@@ -14,6 +14,12 @@ The MVP ships the backend and the Android client first. The iOS client follows a
 The backend owns all data. The apps hold no business rules the other app
 would need to duplicate.
 
+## Databases
+- One database is the source of truth. After launch, that is production (D-045).
+- New rows are created only in the source-of-truth database. Other databases only receive copies.
+- Other databases are created from dumps of the source-of-truth database. Rows with sensitive data are mocked instead of copied.
+- UUIDs stay the same across databases unless exceptions apply.
+
 TODO: hosting, auth, caching, offline behaviour, backend project structure,
 repository layout for the three codebases.
 
