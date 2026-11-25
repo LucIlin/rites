@@ -17,3 +17,8 @@ The source-of-truth database (production, after launch) holds the catalog (D-045
 - Validation queries run after seeding and catch a translation with no translator rows (D-041).
 
 TODO: how passages and their attributes enter the database.
+
+## Editorial review
+After launch, the catalog is reviewed and developed in a continuous editorial process (D-050). Fine-grained decisions about
+the data, such as nuanced categorization, can be left to manual attention there. This works because the catalog is finite
+and its categorization is unlikely to change once finalized.

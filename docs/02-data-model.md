@@ -6,6 +6,9 @@ This document is the source of truth for database design (D-018).
 ## Design principles
 - **Authority control** (D-046): each real-world entity is stored once under one ID. A new record is matched against existing ones before it is created,
   and other rows refer to the entity by ID, never by name. For people this is done with PersonNameVariant and backend rules 9–15.
+- **Editorial review** (D-050): the catalog is reviewed and developed by hand in a continuous editorial process after launch.
+  The catalog is finite and its categorization is unlikely to change once finalized, so the schema and backend rules don't need to
+  settle every fine-grained case; those can be left to manual attention.
 
 ## Conventions
 - Each entity has a surrogate primary key named `<Entity>ID`. Keys are UUIDs, version 7 (`Guid.CreateVersion7()`) (D-043).

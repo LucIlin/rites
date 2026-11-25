@@ -403,3 +403,11 @@
 - **Why:** none stated
 - **Rejected options:** none stated
 - **Updated:** `docs/01-product.md` (MVP scope), `docs/02-data-model.md` (Conventions)
+
+## D-050: Continuous editorial review of the catalog
+- **Date:** 2026-11-25
+- **Status:** DECIDED
+- **Decision:** After launch, the catalog (database) is reviewed and further developed in a continuous editorial process, so some fine-grained decisions can be left to manual attention instead of being settled in the design.
+- **Why:** The database is finite and its categorization isn't likely to change once finalized, so nuanced manual intervention in the dataset can be relied on.
+- **Rejected options:** none stated
+- **Updated:** `docs/02-data-model.md` (Design principles), `docs/07-content-sourcing.md` (Editorial review, new section)
